@@ -9,6 +9,8 @@ root = Path(sys.argv[1] if len(sys.argv) > 1 else "samples/real")
 gt = yaml.safe_load((root / "groundtruth.yaml").read_text())["samples"]
 nfc = lambda s: unicodedata.normalize("NFC", s)
 squash = lambda s: re.sub(r"[\s().·\-,]+", "", nfc(s)).lower()
+# files may sit in subdirs (server: samples/extracted/) and macOS-made names are NFD, yaml is NFC
+files = {nfc(p.name): p for p in root.rglob("*") if p.is_file()}
 
 
 def check(text, g):
@@ -29,7 +31,7 @@ def check(text, g):
 rows = []
 for g in gt:
     t0 = time.time()
-    text = ocr.ocr(str(root / nfc(g["file"])) if (root / nfc(g["file"])).exists() else str(root / g["file"]))
+    text = ocr.ocr(str(files[nfc(g["file"])]))
     r = {"file": g["file"], **check(text, g), "time": round(time.time() - t0, 1), "text": text}
     rows.append(r)
     print(r["file"], {k: v for k, v in r.items() if k not in ("file", "text")}, flush=True)
