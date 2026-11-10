@@ -3,4 +3,4 @@ __pycache__/
 *.pyc
 .DS_Store
 samples/
-bench_result.json
+bench_result*.json

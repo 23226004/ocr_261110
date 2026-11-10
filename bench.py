@@ -38,4 +38,4 @@ for g in gt:
 
 keys = ["amount", "date", "minute", "store_exact", "store_partial"]
 print("\nTOTAL", {k: sum(r[k] for r in rows) for k in keys}, len(rows), "avg", round(sum(r["time"] for r in rows) / len(rows), 1), "s")
-Path("bench_result.json").write_text(json.dumps(rows, ensure_ascii=False, indent=1))
+Path(f"bench_result_{ocr.REPO.split('/')[-1]}.json").write_text(json.dumps(rows, ensure_ascii=False, indent=1))
