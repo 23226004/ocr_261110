@@ -1,15 +1,17 @@
 """Does the ground-truth value appear in GravityOCR's raw text? (OCR recall, upper bound for field extraction)
-Usage: python bench.py [samples/real]"""
+Usage: python bench.py [samples/real] [gpt-model]   (gpt-model: OCR with the OpenAI API instead of the local model)"""
 import json, re, sys, time, unicodedata
 from pathlib import Path
 import yaml
 import ocr
+import gpt
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else "samples/real")
 gt = yaml.safe_load((root / "groundtruth.yaml").read_text())["samples"]
 nfc = lambda s: unicodedata.normalize("NFC", s)
 squash = lambda s: re.sub(r"[\s().·\-,]+", "", nfc(s)).lower()
 # files may sit in subdirs (server: samples/extracted/) and macOS-made names are NFD, yaml is NFC
+GPT = sys.argv[2] if len(sys.argv) > 2 else None
 files = {nfc(p.name): p for p in root.rglob("*") if p.is_file()}
 
 
@@ -31,11 +33,12 @@ def check(text, g):
 rows = []
 for g in gt:
     t0 = time.time()
-    text = ocr.ocr(str(files[nfc(g["file"])]))
+    path = files[nfc(g["file"])]
+    text = gpt.ocr(path, GPT)[0] if GPT else ocr.ocr(str(path))
     r = {"file": g["file"], **check(text, g), "time": round(time.time() - t0, 1), "text": text}
     rows.append(r)
     print(r["file"], {k: v for k, v in r.items() if k not in ("file", "text")}, flush=True)
 
 keys = ["amount", "date", "minute", "store_exact", "store_partial"]
 print("\nTOTAL", {k: sum(r[k] for r in rows) for k in keys}, len(rows), "avg", round(sum(r["time"] for r in rows) / len(rows), 1), "s")
-Path(f"bench_result_{ocr.REPO.split('/')[-1]}.json").write_text(json.dumps(rows, ensure_ascii=False, indent=1))
+Path(f"bench_result_{GPT or ocr.REPO.split('/')[-1]}.json").write_text(json.dumps(rows, ensure_ascii=False, indent=1))

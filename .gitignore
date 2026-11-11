@@ -4,3 +4,7 @@ __pycache__/
 .DS_Store
 samples/
 bench_result*.json
+hw_result*.json
+.env
+hw_fix_result*.json
+receipt_result*.json
